@@ -1,0 +1,52 @@
+$craft-red:		rgb(218,90,71);
+$craft-blue:	rgb(13,120,242);
+$craft-dark:	rgb(41,50,61);
+$craft-light:	rgb(143,152,163);
+$craft-lighter: rgb(185, 191, 198);
+
+.fg-wrapper {
+  div {
+    margin-bottom: 5em;
+  }
+
+  tr:hover {
+    background: rgb(249, 249, 249);
+  }
+
+  td {
+    vertical-align: top;
+  }
+
+  .fg-name {
+    width: 25%;
+  }
+  .fg-handle,
+  .fg-type {
+    width: 20%;
+  }
+
+  .fg-matrix-block .fg-name {
+    padding-left: 2em;
+  }
+  .fg-matrix-field .fg-name {
+    padding-left: 4em;
+    font-style: italic;
+  }
+
+  .fg-warning {
+    color: $craft-red;
+
+    &::before {
+      content: '\f071';
+      color: $craft-red;
+      font-family: FontAwesome;
+      font-size: 0.75em;
+      font-style: normal;
+      font-variant: normal;
+      margin-right: 0.5em;
+      text-transform: none;
+    }
+  }
+}
+
+@import "lib/font-awesome/font-awesome";

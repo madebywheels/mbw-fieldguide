@@ -1,0 +1,148 @@
+{% extends '_layouts/cp' %}
+
+{% includeCssResource 'mbwfieldguide/css/fieldguide.css' %}
+
+{% set title = 'Fieldguide: ' %}
+
+{% set sidebarSections = '' %}
+{% set sidebarGlobals = '' %}
+{% set group = { type: '', id: 0 } %}
+
+{% if groupHandle is defined %}
+    {% set group = group|merge({type: groupHandle}) %}
+    {% if groupId is defined %}
+        {% set group = group|merge({id: groupId}) %}
+    {% endif %}
+{% else %}
+    {% set group = group|merge({type: 'unused'}) %}
+{% endif %}
+
+{% set sections = craft.sections.getAllSections() %}
+{% for section in sections %}
+    {% set link %}<li><a href="{{ url('mbwfieldguide/section/' ~ section.id) }}"{% if group.type == 'section' and group.id == section.id %} class="sel"{% endif %}>{{ section.name }}</a></li>{% endset %}
+    {% set sidebarSections = sidebarSections ~ link %}
+{% endfor %}
+
+{% set globals = craft.globals.getAllSets() %}
+{% for global in globals %}
+    {% set link %}<li><a href="{{ url('mbwfieldguide/globals/' ~ global.id) }}"{% if group.type == 'globals' and group.id == global.id %} class="sel"{% endif %}>{{ global.name }}</a></li>{% endset %}
+    {% set sidebarGlobals = sidebarGlobals ~ link %}
+{% endfor %}
+
+{% set sidebar %}
+    <nav class="last">
+        <ul>
+            <li><a href="{{ url('mbwfieldguide') }}"{% if group.type == 'unused' %} class="sel"{% endif %}>Unused Fields</a></li>
+            {% if sections|length %}
+                <li class="heading"><span>Sections</span></li>
+                {{ sidebarSections|raw }}
+            {% endif %}
+            {% if globals|length %}
+                <li class="heading"><span>Globals</span></li>
+                {{ sidebarGlobals|raw }}
+            {% endif %}
+        </ul>
+    </nav>
+{% endset %}
+
+{% macro content(fieldIds) %}
+    {% if fieldIds|length %}
+        <table class="data fullwidth fg-table">
+            <thead>
+                <tr>
+                    <th scope="col" class="fg-name">Name</th>
+                    <th scope="col" class="fg-handle">Handle</th>
+                    <th scope="col" class="fg-type">Type</th>
+                    <th scope="col" class="fg-instructions">Instructions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for fieldId in fieldIds %}
+                {% set field = craft.fields.getFieldById(fieldId) %}
+                <tr class="fg-field{% if field.type == 'Matrix' %} fg-matrix{% endif %}">
+                    <td class="fg-name"><a href="{{ url('settings/fields/edit/'~field.id) }}">{{ field.name }}</a></td>
+                    <td class="fg-handle"><code>{{ field.handle }}</code></td>
+                    <td class="fg-type">
+                        {% set fieldType = field.getFieldType() %}
+                        {% if fieldType %}
+                            {{ fieldType.name }}
+                        {% else %}
+                            <span class="fg-warning">{{ field.type }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="fg-instructions">{% if field.instructions %}{{ field.instructions|markdown|widont }}{% else %}<span class="fg-warning">Missing instructions</span>{% endif %}</td>
+                </tr>
+                {% if field.type == "Matrix" %}
+                    {% set blockTypes = craft.mbwfieldguide.getBlocktypes(field.id) %}
+                    {% for blockType in blockTypes %}
+                        <tr class="fg-field fg-matrix-block">
+                            <td class="fg-name">{{ blockType.name }}</td>
+                            <td class="fg-handle"><code>{{ blockType.handle }}</code></td>
+                            <td class="fg-type"></td>
+                            <td class="fg-instructions"></td>
+                        </tr>
+                        {% for blockField in blockType.fields %}
+                            <tr class="fg-field fg-matrix-field">
+                                <td class="fg-name">{{ blockField.name }}</td>
+                                <td class="fg-handle"><code>{{ blockField.handle }}</code></td>
+                                <td class="fg-type">
+                                    {% set fieldType = blockField.getFieldType() %}
+                                    {% if fieldType %}
+                                        {{ fieldType.name }}
+                                    {% else %}
+                                        <span class="fg-warning">{{ blockField.type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fg-instructions">{% if blockField.instructions %}{{ blockField.instructions|markdown|widont }}{% else %}<span class="fg-warning">Missing instructions</span>{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>There are no fields to display.</p>
+    {% endif %}
+{% endmacro %}
+
+{% import _self as table %}
+
+{% set content %}
+    <div class="fg-wrapper">
+        {% switch group.type %}
+            {% case 'section' %}
+                {% set section = craft.sections.getSectionById(group.id) %}
+                {% if section %}
+                    {% set title = title ~ section.name %}
+                    {% set entryTypes = section.entryTypes %}
+                    {% for entryType in entryTypes %}
+                        <div class="fg-block">
+                            {% if entryTypes|length > 1 %}
+                                <h2><a href="{{ url('settings/sections/'~section.id~'/entrytypes/'~entryType.id) }}">{{ entryType }}</a></h2>
+                            {% endif %}
+                            {% set fieldIds = entryType.getFieldLayout().getFieldIds() %}
+                            {{ table.content(fieldIds) }}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {% redirect 'mbwfieldguide' %}
+                {% endif %}
+            {% case 'globals' %}
+                {% set global = craft.globals.getSetById(group.id) %}
+                {% if global %}
+                    {% set title = title ~ global.name %}
+                    <div>
+                        {% set fieldIds = global.getFieldLayout(global).getFieldIds() %}
+                        {{ table.content(fieldIds) }}
+                    </div>
+                {% else %}
+                    {% redirect 'mbwfieldguide' %}
+                {% endif %}
+            {% case 'unused' %}
+                {% set fieldIds = craft.mbwfieldguide.unusedFieldIds %}
+                {% set title = title ~ 'Unused Fields' %}
+                {{ table.content(fieldIds) }}
+        {% endswitch %}
+    </div>
+{% endset %}
