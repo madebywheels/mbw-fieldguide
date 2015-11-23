@@ -1,0 +1,18 @@
+# Application Noise
+# --------------------------------------------------
+
+# Compass
+config.rb
+
+# OS X 
+*.DS_Store
+
+# PHPStorm
+.idea
+
+# Sass
+.sass-cache
+
+
+# Project Files and Folders
+# --------------------------------------------------
